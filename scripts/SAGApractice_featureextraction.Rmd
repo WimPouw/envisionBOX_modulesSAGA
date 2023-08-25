@@ -1,0 +1,305 @@
+---
+title: "Practice Dataset and Feature Extraction for Machine Classification: SAGA"
+author: Wim Pouw (wim.pouw@donders.ru.nl)
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme:  tactile
+---
+
+![](./Images/envision_banner.png){ width=50%; align=”center”}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(papaja) #for using printnum
+```
+## Info documents
+
+* This R coding module that introduces some deidentified practice data extracted from the Bielefeld corpus. We we will use this corpus to show you how to extract some features of gestures, to be used for a machine classification task.
+
+* location Repository:  https://github.com/WimPouw/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/
+
+* location Rmarkdown: https://github.com/WimPouw/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/scripts/
+
+## Video Example of the SAGA data
+<iframe width="950" height="534" src="../SaGA-VO7/videos_masked/V07_small.mp4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+## Background
+
+
+## Set up folders and check data formats
+
+
+```{r seting_up}
+ppn <- c('V07', 'V08', 'V11', 'V12', 'V21')
+#When running this in Rmarkdown yourself: 
+#first make sure to set "Session" -> "Set Working Directory" -> "To Source File Location"
+
+#get current drive
+curfolder <- dirname(getwd())
+kinematicsfolder  <- paste0(curfolder, '/kinematics/')
+speechfolder      <- paste0(curfolder, '/speech/')
+gesturefolder     <- paste0(curfolder, '/gesture_event_labels/')
+
+# output folder
+gesturefeatfolder     <- paste0(curfolder, '/gesture_feature_dataset/')
+
+```
+
+# Some functions well use
+```{r}
+#take some time series, apply the filter, then return it
+library(signal)
+butter.it <- function(x, samplingrate, order, lowpasscutoff)
+  {
+    nyquist <- samplingrate/2
+    bf <- butter(order,lowpasscutoff/(nyquist), type="low") #normalized frequency (cutoff divided by the nyquist frequency)
+    x <<- as.numeric(signal::filtfilt(bf, x)) #apply forwards and backwards using filtfilt
+  } 
+  
+  
+speedXYZ.it <- function(x,y,z, time_millisecond)
+  {
+    #calculate the Euclidean distance from time point x to timepoint x+1, for 3 dimensions
+    speed <- c(0, sqrt( rowSums( cbind(diff(x)^2, diff(y)^2,diff(z)^2)) ))
+    #smooth the result
+    speed <- butter.it(speed, samplingrate = 25, order = 1, lowpasscutoff = 10)
+    #scale the speed vector so that we express it units change per second change
+    speed <<- speed/(c(1, diff(time_millisecond))/1000)  
+  }
+  
+  #derive the change of x and smooth
+derive.it <- function(x)
+  {
+    butter.it(c(0, diff(x)), samplingrate = 100, order = 1, lowpasscutoff = 20)
+  }
+```
+
+
+```{r}
+library(zoo) # for interpolation
+library(readr) # string manipulation
+library(pracma)
+
+loop = 1
+# lets make some features
+for(pp in ppn)
+{
+  print(paste0('working on: ', pp))
+  # load in kinematics data for this participant
+  ppnum <- parse_number(pp)
+  formatted_ppnum <- sprintf("%02d", ppnum)
+  # calculate speed, and acceleration, for some key joints
+  body <- read.csv(paste0(kinematicsfolder, 'V', formatted_ppnum, '_body.csv'))
+  hand <- read.csv(paste0(kinematicsfolder, 'V', formatted_ppnum, '_hands.csv')) #note that the hands are centralized to the wrist
+  time <- body$time
+  timeseriestime <- range(time) #this is the range of the times series in millesconds (events and non-events are within these ranges)
+  
+  #speech
+  env   <- read.csv(paste0(speechfolder, 'ELAN_ppn', ppnum, '_SaGa_ENVELOPE.csv'))
+  pitch <-read.csv(paste0(speechfolder, 'PRAAT_ppn', ppnum, '_SaGa_pitch.csv'))
+    
+  # gesture events
+  cnam <- c('begintimes', 'endtimes', 'gesture_type')
+  leftgestures <- read.csv(paste0(gesturefolder, 'ELAN_ppn', ppnum, '_SaGa_gesture_left.csv'))[,1:3]
+  colnames(leftgestures) <- cnam
+  rightgestures <- read.csv(paste0(gesturefolder, 'ELAN_ppn', ppnum, '_SaGa_gesture_right.csv'))[,1:3]
+  colnames(rightgestures) <- cnam
+  leftgestures$hand <- "left" 
+  rightgestures$hand <- "right"
+  gestures <- rbind.data.frame(leftgestures, rightgestures)
+  gestures$gesture_duration <- gestures$endtimes-gestures$begintimes
+  ######mean gesture time
+  gesture_time <- mean(gestures$gesture_duration)
+  gesture_time_sd <- sd(gestures$gesture_duration)
+  min_duration <- 400 #set a minimum
+  #sample from a normal distribution
+  samples_to_get <- pmax(rnorm(nrow(gestures), gesture_time, gesture_time_sd), min_duration)
+  
+  #now try to catch these samples in the time series that do not include events
+  # Create a data frame to store non-event intervals
+  non_event_intervals <- data.frame(begin = numeric(0), end = numeric(0))
+  
+  # Loop through the sampled durations and find non-event intervals
+  for (sample_duration in samples_to_get) {
+    # Generate a random start time within the valid time range
+    random_start <- runif(1, timeseriestime[1], timeseriestime[2] - sample_duration)
+    
+    # Calculate end time based on the generated duration
+    random_end <- random_start + sample_duration
+    
+    # Check if the interval overlaps with any event
+    overlap <- any((random_end > gestures$begintimes) & (random_start < gestures$endtimes))
+    
+    # If no overlap, add the interval to the non_event_intervals data frame
+    if (!overlap) {
+      non_event_intervals <- rbind(non_event_intervals, data.frame(begin = round(random_start), end = round(random_end)))
+    }
+  }
+
+  # add information
+  non_event_intervals$gesture_type <- 'no_gesture'
+  colnames(non_event_intervals) <- cnam
+  non_event_intervals$hand <- 'no_gesture'
+  non_event_intervals$gesture_duration <- non_event_intervals$endtimes-non_event_intervals$begintimes
+  
+  #add non_events to the gesture dataset
+  gestures <- rbind.data.frame(gestures, non_event_intervals)
+  gestures$gesturesid <- paste0('event_code', 1:nrow(gestures))
+  gestures$ppn <- NA
+  
+  #initialize the features
+  gestures$kfeat_maxspeedwristleft <-
+  gestures$kfeat_maxspeedwristright <- 
+  gestures$kfeat_maxaccwristleft <-
+  gestures$kfeat_maxaccwristleft <- 
+  gestures$kfeat_maxspeedelbowleft <- 
+  gestures$kfeat_maxspeedelbowright <-
+  gestures$kfeat_peakswristleft <-
+  gestures$kfeat_peakswristright <-
+  gestures$kfeat_avjerkleft <-
+  gestures$kfeat_avjerkright <-
+  gestures$kfeat_timetospeedleft <- 
+  gestures$kfeat_timetospeedright <- 
+  gestures$kfeat_wristheightleft <- 
+  gestures$kfeat_wristheightright <- 
+  gestures$kfeat_wristwidthleftright <- 
+  gestures$kfeat_thumbindexdistanceleft  <-  
+  gestures$kfeat_thumbindexdistanceright  <-  
+  gestures$kfeat_wristindexdistanceleft  <-  
+  gestures$kfeat_wristindexdistanceright  <- 
+  gestures$sfeat_maxf0 <- 
+  gestures$sfeat_meanf <-
+  gestures$sfeat_maxenv <- 
+  gestures$sfeat_maxenvvel <- 
+  gestures$sfeat_maxenvacc <- 
+  gestures$sfeat_envaccpeaks <-  
+  gestures$sfeat_envaccpeaksd <-  NA
+  
+
+  ################### lets take core features for the kindematics
+  key_mdata <- cbind.data.frame(body$time, body$X_LEFT_WRIST,  body$Y_LEFT_WRIST,  body$Z_LEFT_WRIST,
+                     body$X_RIGHT_WRIST,  body$Y_RIGHT_WRIST,  body$Z_RIGHT_WRIST,
+                     body$X_LEFT_ELBOW,  body$Y_LEFT_ELBOW,  body$Z_LEFT_ELBOW,
+                     body$X_RIGHT_ELBOW,  body$Y_RIGHT_ELBOW,  body$Z_RIGHT_ELBOW,
+                     body$X_LEFT_SHOULDER,  body$Y_LEFT_SHOULDER,  body$Z_LEFT_SHOULDER,
+                     body$X_RIGHT_SHOULDER,  body$Y_RIGHT_SHOULDER,  body$Z_RIGHT_SHOULDER,
+                     hand$X_LEFT_THUMB_TIP, hand$Y_LEFT_THUMB_TIP, hand$Z_LEFT_THUMB_TIP,
+                     hand$X_RIGHT_THUMB_TIP, hand$Y_RIGHT_THUMB_TIP, hand$Z_RIGHT_THUMB_TIP,
+                     hand$X_LEFT_INDEX_FINGER_TIP, hand$Y_LEFT_INDEX_FINGER_TIP, hand$Z_LEFT_INDEX_FINGER_TIP,
+                     hand$X_RIGHT_INDEX_FINGER_TIP, hand$Y_RIGHT_INDEX_FINGER_TIP, hand$Z_RIGHT_INDEX_FINGER_TIP) 
+  #some columns start with na's lets remove trailing ends
+  key_mdata <- na.trim(key_mdata)
+  
+  # interpolate NA's
+  key_mdata[,2:ncol(key_mdata)] <- apply(key_mdata[,2:ncol(key_mdata)], 2, function(x)na.approx(x))
+  
+  #smooth all key_data with a 10Hz, 4th order butterworth filter
+  key_mdata <- apply(key_mdata, 2, function(x)butter.it(x, samplingrate=25, order = 4, lowpasscutoff=10))
+  key_mdata <- data.frame(key_mdata)
+  
+  # now take some derivatives
+  key_mdata$wrist_speed_left  <- speedXYZ.it(key_mdata$body.X_LEFT_WRIST,  key_mdata$body.Y_LEFT_WRIST,  key_mdata$body.Z_LEFT_WRIST, key_mdata$time)
+  key_mdata$wrist_speed_right <- speedXYZ.it(key_mdata$body.X_RIGHT_WRIST,  key_mdata$body.Y_RIGHT_WRIST,  key_mdata$body.Z_RIGHT_WRIST, key_mdata$time)
+  key_mdata$elbow_speed_left  <- speedXYZ.it(key_mdata$body.X_LEFT_ELBOW,  key_mdata$body.Y_LEFT_ELBOW,  key_mdata$body.Z_LEFT_ELBOW, key_mdata$time)
+  key_mdata$elbow_speed_right <- speedXYZ.it(key_mdata$body.X_RIGHT_ELBOW,  key_mdata$body.Y_RIGHT_ELBOW,  key_mdata$body.Z_RIGHT_ELBOW, key_mdata$time)
+  key_mdata$wrist_acc_left    <- derive.it(key_mdata$wrist_speed_left)
+  key_mdata$wrist_acc_right   <- derive.it(key_mdata$wrist_speed_right)
+  
+  # get static features (at peak speed)
+  for(id in  unique(gestures$gesturesid))
+  {
+    inddfram <-  which(gestures$gesturesid==id)
+    subevent <- gestures[inddfram,]
+    tssub <- key_mdata[time > subevent$begintimes & time < subevent$endtimes, ]
+    # get kinematic features
+    gestures$kfeat_maxspeedwristleft[inddfram] <- max(tssub$wrist_speed_left)
+    gestures$kfeat_maxspeedwristright[inddfram] <- max(tssub$wrist_speed_right)
+    gestures$kfeat_maxaccwristleft[inddfram] <- max(tssub$wrist_acc_left)
+    gestures$kfeat_maxaccwristleft[inddfram] <- max(tssub$wrist_acc_right)
+    gestures$kfeat_maxspeedelbowleft[inddfram] <- max(tssub$elbow_speed_left)
+    gestures$kfeat_maxspeedelbowright[inddfram] <- max(tssub$elbow_speed_right)
+    #numpeaks
+    kfeat_peakswristleft  <- nrow(findpeaks(tssub$wrist_speed_left))
+    kfeat_peakswristright <- nrow(findpeaks(tssub$wrist_speed_right))
+    if (length(kfeat_peakswristleft) != 0) {
+      gestures$kfeat_peakswristleft[inddfram] <- kfeat_peakswristleft
+    } else if (length(kfeat_peakswristleft) == 0) {
+      gestures$kfeat_peakswristleft[inddfram] <- 0
+    }
+    
+    if (length(kfeat_peakswristright) != 0) {
+      gestures$kfeat_peakswristright[inddfram] <- kfeat_peakswristright
+    } else if (length(kfeat_peakswristright)==0) {
+      gestures$kfeat_peakswristright[inddfram] <- 0
+    }
+    #average jerk
+    gestures$kfeat_avjerkleft[inddfram] <- mean(abs(derive.it(tssub$wrist_acc_left)))
+    gestures$kfeat_avjerkright[inddfram] <- mean(abs(derive.it(tssub$wrist_acc_right)))
+    #get static features at peak speed
+    index_maxspeedwristleft <- which.max(tssub$wrist_speed_left)
+    index_maxspeedwristright <- which.max(tssub$wrist_speed_right)
+    gestures$kfeat_timetospeedleft[inddfram] <- (index_maxspeedwristleft*1000/25)/subevent$gesture_duration
+    gestures$kfeat_timetospeedright[inddfram] <- (index_maxspeedwristright*1000/25)/subevent$gesture_duration
+    # now take some static information from the poses
+    stat_tssub <- tssub[index_maxspeedwristleft,]
+    stat_tssub <- tssub[index_maxspeedwristright,]
+    #height to shoulder wrist
+    gestures$kfeat_wristheightleft[inddfram] <- max(tssub$body.Y_LEFT_SHOULDER-tssub$body.Y_LEFT_WRIST)
+    gestures$kfeat_wristheightright[inddfram] <- max(tssub$body.Y_RIGHT_SHOULDER-tssub$body.Y_RIGHT_WRIST)
+    gestures$kfeat_wristwidthleftright[inddfram] <- max(tssub$body.X_LEFT_WRIST)-max(tssub$body.X_RIGHT_WRIST)
+
+      # thumb indexfv
+      gestures$kfeat_thumbindexdistanceleft[inddfram]  <-  sqrt((stat_tssub$hand.X_LEFT_THUMB_TIP-stat_tssub$hand.X_LEFT_INDEX_FINGER_TIP)^2+
+                                          (stat_tssub$hand.Y_LEFT_THUMB_TIP-stat_tssub$hand.Y_LEFT_INDEX_FINGER_TIP)^2+
+                                            (stat_tssub$hand.X_LEFT_THUMB_TIP-stat_tssub$hand.X_LEFT_INDEX_FINGER_TIP)^2)
+      gestures$kfeat_thumbindexdistanceright[inddfram]  <-  sqrt((stat_tssub$hand.X_RIGHT_THUMB_TIP-stat_tssub$hand.X_RIGHT_INDEX_FINGER_TIP)^2+
+                                          (stat_tssub$hand.Y_RIGHT_THUMB_TIP-stat_tssub$hand.Y_RIGHT_INDEX_FINGER_TIP)^2+
+                                            (stat_tssub$hand.X_RIGHT_THUMB_TIP-stat_tssub$hand.X_RIGHT_INDEX_FINGER_TIP)^2)
+      gestures$kfeat_wristindexdistanceleft[inddfram]  <-  sqrt((stat_tssub$body.X_LEFT_WRIST-stat_tssub$hand.X_LEFT_INDEX_FINGER_TIP)^2+
+                                          (stat_tssub$body.Y_LEFT_WRIST-stat_tssub$hand.Y_LEFT_INDEX_FINGER_TIP)^2+
+                                            (stat_tssub$body.X_LEFT_WRIST-stat_tssub$hand.X_LEFT_INDEX_FINGER_TIP)^2)
+      gestures$kfeat_wristindexdistanceright[inddfram]  <-  sqrt((stat_tssub$body.X_RIGHT_WRIST-stat_tssub$hand.X_RIGHT_INDEX_FINGER_TIP)^2+
+                                          (stat_tssub$body.Y_RIGHT_WRIST-stat_tssub$hand.Y_RIGHT_INDEX_FINGER_TIP)^2+
+                                            (stat_tssub$body.X_RIGHT_WRIST-stat_tssub$hand.X_RIGHT_INDEX_FINGER_TIP)^2)
+    
+    # some speech info
+    envsub   <- env[time > subevent$begintimes & time < subevent$endtimes, ]
+    pitchsub <- pitch[time > subevent$begintimes & time < subevent$endtimes, ]
+    gestures$sfeat_maxf0[inddfram] <- max(pitchsub$F0_Hz)
+    sfeat_meanf <- mean(pitchsub$F0_Hz[pitchsub$F0_Hz>0])
+    if(sum(pitchsub$F0_Hz>0)==0)
+    {gestures$sfeat_meanf[inddfram]<-0}
+        if(sum(pitchsub$F0_Hz>0)>0)
+    {gestures$sfeat_meanf[inddfram]<-sfeat_meanf}
+    
+    gestures$sfeat_maxenv[inddfram] <- max(envsub$ENV)
+    gestures$sfeat_maxenvvel[inddfram] <- max(envsub$ENV_VEL)
+    gestures$sfeat_maxenvacc[inddfram] <- max(envsub$ENV_ACC)
+    peaksenv <- findpeaks(envsub$ENV_ACC)
+    sfeat_envaccpeaks <-  nrow(peaksenv)/subevent$gesture_duration
+    sfeat_envaccpeaksd <-  round(mean(diff(peaksenv[,2])),3) #these values are very small so lets make them bigger
+    if(length(peaksenv ) == 0)
+    {
+    gestures$sfeat_envaccpeaks[inddfram] <-0
+    gestures$sfeat_envaccpeaksd[inddfram] <- 0}
+    if(length(peaksenv ) > 0)
+    {gestures$sfeat_envaccpeaks[inddfram] <- sfeat_envaccpeaks 
+    gestures$sfeat_envaccpeaksd[inddfram] <- sfeat_envaccpeaksd}
+  }
+  gestures$ppn <- ppnum
+  if(loop == 1)
+  {
+  gestures$ppn <- pp
+  feature_dataset <- gestures
+  }
+  if(loop > 1)
+  {
+    feature_dataset <- rbind.data.frame(feature_dataset, gestures)
+  }
+  loop = loop + 1
+}
+
+write.csv(feature_dataset, paste0(gesturefeatfolder, 'gesture_feature_datasetSAGA.csv'))
+```
+
