@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ANNOTATION_DOCUMENT AUTHOR="" DATE="2023-07-27T12:17:43+01:00"
+<ANNOTATION_DOCUMENT AUTHOR="" DATE="2023-08-30T13:02:49+01:00"
     FORMAT="3.0" VERSION="3.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">
     <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
         <MEDIA_DESCRIPTOR
             MEDIA_URL="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/videos_masked/V07_small.mp4"
-            MIME_TYPE="video/mp4" RELATIVE_MEDIA_URL="../videos_masked/V07_small.mp4"/>
+            MIME_TYPE="video/mp4" RELATIVE_MEDIA_URL="../../videos_masked/V07_small.mp4"/>
         <MEDIA_DESCRIPTOR
             EXTRACTED_FROM="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/videos_masked/V07_small.mp4"
             MEDIA_URL="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/SaGA-V07/V07.wav"
-            MIME_TYPE="audio/x-wav" RELATIVE_MEDIA_URL="./V07.wav"/>
+            MIME_TYPE="audio/x-wav" RELATIVE_MEDIA_URL="../../SaGA-V07/V07.wav"/>
         <LINKED_FILE_DESCRIPTOR
-            LINK_URL="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/SaGA-V07/ELAN_ppn7_SaGa_ENVELOPE.csv"
-            MIME_TYPE="unknown" RELATIVE_LINK_URL="./ELAN_ppn7_SaGa_ENVELOPE.csv"/>
+            LINK_URL="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/speech/ELAN_ppn7_SaGa_ENVELOPE.csv"
+            MIME_TYPE="unknown" RELATIVE_LINK_URL="../../speech/ELAN_ppn7_SaGa_ENVELOPE.csv"/>
         <LINKED_FILE_DESCRIPTOR
             LINK_URL="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/kinematics/V07_body.csv"
-            MIME_TYPE="unknown" RELATIVE_LINK_URL="../kinematics/V07_body.csv"/>
+            MIME_TYPE="unknown" RELATIVE_LINK_URL="../../kinematics/V07_body.csv"/>
         <LINKED_FILE_DESCRIPTOR
-            LINK_URL="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/SaGA-V07/V07-SGRef_tsconf.xml"
+            LINK_URL="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/other_data/SaGA-V07/V07-SGRef_tsconf.xml"
             MIME_TYPE="text/xml" RELATIVE_LINK_URL="./V07-SGRef_tsconf.xml"/>
         <PROPERTY NAME="URN">urn:nl-mpi-tools-elan-eaf:5c7dab48-67e4-4877-978e-c55d23a5c95b</PROPERTY>
         <PROPERTY NAME="lastUsedAnnotationId">9264</PROPERTY>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<timeseries date="2023-07-27T12:16:12+01:00" version="1.0">
+<timeseries date="2023-08-30T16:20:53+01:00" version="1.0">
     <tracksource sample-type="Discontinuous Rate"
-        source-url="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/SaGA-V07/ELAN_ppn7_SaGa_ENVELOPE.csv" time-column="3">
+        source-url="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/speech/ELAN_ppn7_SaGa_ENVELOPE.csv" time-column="3">
         <property key="provider" value="mpi.eudico.client.annotator.timeseries.csv.CSVServiceProvider"/>
         <track derivative="0" name="envelope">
             <property key="detect-range" value="true"/>
@@ -13,8 +13,29 @@
             <range max="0.99996185" min="-0.003022214"/>
             <color>0,0,0</color>
         </track>
+        <track derivative="0" name="envelope derivative">
+            <property key="detect-range" value="true"/>
+            <sample-position>
+                <pos col="1" row="0"/>
+            </sample-position>
+            <description/>
+            <units/>
+            <range max="6.543371" min="-7.862578"/>
+            <color>255,0,51</color>
+        </track>
     </tracksource>
-    <tracksource sample-type="Unknown" source-url="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/kinematics/V07_body.csv">
+    <tracksource sample-type="Discontinuous Rate"
+        source-url="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/kinematics/V07_body.csv" time-column="0">
         <property key="provider" value="mpi.eudico.client.annotator.timeseries.csv.CSVServiceProvider"/>
+        <track derivative="0" name="nose horizontal movement">
+            <property key="detect-range" value="true"/>
+            <sample-position>
+                <pos col="1" row="0"/>
+            </sample-position>
+            <description/>
+            <units/>
+            <range max="0.5213459" min="0.37477893"/>
+            <color>255,102,102</color>
+        </track>
     </tracksource>
 </timeseries>

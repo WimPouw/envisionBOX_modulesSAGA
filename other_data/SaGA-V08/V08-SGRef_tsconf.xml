@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<timeseries date="2023-08-30T16:27:04+01:00" version="1.0">
+    <tracksource sample-type="Continuous Rate"
+        source-url="file:///C:/Research_Projects/envisionBOX_modulesSAGA/envisionBOX_modulesSAGA/speech/ELAN_ppn8_SaGa_ENVELOPE.csv" time-column="3">
+        <property key="provider" value="mpi.eudico.client.annotator.timeseries.csv.CSVServiceProvider"/>
+        <track derivative="0" name="smoothed amplitude envelope">
+            <property key="detect-range" value="true"/>
+            <sample-position>
+                <pos col="0" row="0"/>
+            </sample-position>
+            <description/>
+            <units/>
+            <range max="0.9999558" min="-0.003647829"/>
+            <color>0,0,0</color>
+        </track>
+    </tracksource>
+</timeseries>

@@ -7,7 +7,9 @@
     <pref key="LayoutManager.SelectedTabIndex">
         <Int>1</Int>
     </pref>
-    <prefList key="TimeSeriesViewer.Panel-2"/>
+    <prefList key="TimeSeriesViewer.Panel-2">
+        <String>nose horizontal movement</String>
+    </prefList>
     <pref key="LayoutManager.VisibleMultiTierViewer">
         <String>mpi.eudico.client.annotator.viewer.TimeLineViewer</String>
     </pref>
@@ -30,7 +32,7 @@
         <Int>307</Int>
     </pref>
     <pref key="SelectionEndTime">
-        <Long>146730</Long>
+        <Long>157800</Long>
     </pref>
     <pref key="ExportTabDialog.SelectTiersMode">
         <String>Tier</String>
@@ -91,10 +93,10 @@
         </pref>
     </prefGroup>
     <pref key="LayoutManager.TSWavSplitPaneDividerLocation">
-        <Int>190</Int>
+        <Int>249</Int>
     </pref>
     <prefList key="ExportTabDialog.selectedTiers">
-        <String>R.Speech_form</String>
+        <String>RS_Sentence</String>
     </prefList>
     <prefList key="CommentViewer.Columns.Order">
         <String>Start Time</String>
@@ -124,7 +126,7 @@
         <Int>64</Int>
     </pref>
     <pref key="SelectionBeginTime">
-        <Long>431260</Long>
+        <Long>157770</Long>
     </pref>
     <prefGroup key="AAM-LR Phone level audio segmentation">
         <pref key="base_url">
@@ -138,13 +140,13 @@
         <String>default</String>
     </prefList>
     <pref key="TimeSeriesViewer.NumberOfPanels">
-        <Int>2</Int>
+        <Int>1</Int>
     </pref>
     <pref key="TimeScaleBeginTime">
-        <Long>143290</Long>
+        <Long>0</Long>
     </pref>
     <pref key="MediaTime">
-        <Long>146730</Long>
+        <Long>157800</Long>
     </pref>
     <prefList key="MultiTierViewer.TierOrder">
         <String>default</String>
@@ -182,18 +184,18 @@
         <pref key="RS_Referent">
             <Object class="java.awt.Color">0,90,90</Object>
         </pref>
-        <pref key="RS_RefNum">
-            <Object class="java.awt.Color">90,0,160</Object>
-        </pref>
         <pref key="R.Speech_form">
             <Object class="java.awt.Color">90,90,0</Object>
+        </pref>
+        <pref key="RS_RefNum">
+            <Object class="java.awt.Color">90,0,160</Object>
         </pref>
         <pref key="RG_RefNum_Left">
             <Object class="java.awt.Color">0,160,90</Object>
         </pref>
     </prefGroup>
     <pref key="LayoutManager.SplitPaneDividerLocation">
-        <Int>263</Int>
+        <Int>295</Int>
     </pref>
     <prefList key="CommentViewer.Columns.Hidden">
         <String>Sender</String>
@@ -201,7 +203,7 @@
     </prefList>
     <prefList key="ExportTabDialog.HiddenTiers">
         <String>default</String>
-        <String>RS_Sentence</String>
+        <String>R.Speech_form</String>
         <String>RS_Detail</String>
         <String>RS_Referent</String>
         <String>R.G.Sequence</String>
